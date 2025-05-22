@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,37 +15,54 @@
  */
 
 locals {
+  # descriptive_name cannot contain colons, so we omit the universe from the default
+  _observability_factory_path = pathexpand(coalesce(var.factories_config.observability, "-"))
   descriptive_name = (
     var.descriptive_name != null ? var.descriptive_name : "${local.prefix}${var.name}"
   )
+  observability_factory_data_raw = [
+    for f in try(fileset(local._observability_factory_path, "*.yaml"), []) :
+    yamldecode(file("${local._observability_factory_path}/${f}"))
+  ]
   parent_type = var.parent == null ? null : split("/", var.parent)[0]
   parent_id   = var.parent == null ? null : split("/", var.parent)[1]
   prefix      = var.prefix == null ? "" : "${var.prefix}-"
   project = (
-    var.project_create ?
-    {
+    var.project_reuse == null
+    ? {
       project_id = try(google_project.project[0].project_id, null)
       number     = try(google_project.project[0].number, null)
       name       = try(google_project.project[0].name, null)
     }
-    : {
-      project_id = "${local.prefix}${var.name}"
-      number     = try(data.google_project.project[0].number, null)
-      name       = try(data.google_project.project[0].name, null)
-    }
+    : (
+      try(var.project_reuse.use_data_source, null) == false
+      ? {
+        project_id = local.project_id
+        number     = try(var.project_reuse.project_attributes.number, null)
+        name       = try(var.project_reuse.project_attributes.name, null)
+      }
+      : {
+        project_id = local.project_id
+        number     = try(data.google_project.project[0].number, null)
+        name       = try(data.google_project.project[0].name, null)
+      }
+    )
   )
+  project_id         = "${local.universe_prefix}${local.prefix}${var.name}"
+  universe_prefix    = var.universe == null ? "" : "${var.universe.prefix}:"
+  available_services = tolist(setsubtract(var.services, try(var.universe.unavailable_services, [])))
 }
 
 data "google_project" "project" {
-  count      = var.project_create ? 0 : 1
-  project_id = "${local.prefix}${var.name}"
+  count      = try(var.project_reuse.use_data_source, null) == true ? 1 : 0
+  project_id = local.project_id
 }
 
 resource "google_project" "project" {
-  count               = var.project_create ? 1 : 0
+  count               = var.project_reuse == null ? 1 : 0
   org_id              = local.parent_type == "organizations" ? local.parent_id : null
   folder_id           = local.parent_type == "folders" ? local.parent_id : null
-  project_id          = "${local.prefix}${var.name}"
+  project_id          = local.project_id
   name                = local.descriptive_name
   billing_account     = var.billing_account
   auto_create_network = var.auto_create_network
@@ -61,7 +78,7 @@ resource "google_project" "project" {
 }
 
 resource "google_project_service" "project_services" {
-  for_each                   = toset(var.services)
+  for_each                   = toset(local.available_services)
   project                    = local.project.project_id
   service                    = each.value
   disable_on_destroy         = var.service_config.disable_on_destroy
@@ -71,7 +88,7 @@ resource "google_project_service" "project_services" {
 
 resource "google_compute_project_metadata_item" "default" {
   for_each = (
-    contains(var.services, "compute.googleapis.com") ? var.compute_metadata : {}
+    contains(local.available_services, "compute.googleapis.com") ? var.compute_metadata : {}
   )
   project    = local.project.project_id
   key        = each.key

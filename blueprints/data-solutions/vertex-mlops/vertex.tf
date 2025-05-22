@@ -124,4 +124,10 @@ resource "google_workbench_instance" "playground" {
   depends_on = [
     google_project_iam_member.shared_vpc,
   ]
+  lifecycle {
+    ignore_changes = [
+      gce_setup[0].metadata["resource-url"],
+      gce_setup[0].metadata["instance-region"],
+    ]
+  }
 }

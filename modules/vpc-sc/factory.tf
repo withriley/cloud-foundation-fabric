@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ locals {
     }
   }
   _data_paths = {
-    for k in ["access_levels", "egress_policies", "ingress_policies"] : k => (
+    for k in ["access_levels", "egress_policies", "ingress_policies", "perimeters"] : k => (
       var.factories_config[k] == null
       ? null
       : pathexpand(var.factories_config[k])
@@ -32,7 +32,6 @@ locals {
     access_levels = {
       for k, v in local._data.access_levels : k => {
         combining_function = try(v.combining_function, null)
-        description        = try(v.description, null)
         conditions = [
           for c in try(v.conditions, []) : merge({
             device_policy          = null
@@ -41,17 +40,24 @@ locals {
             negate                 = null
             regions                = []
             required_access_levels = []
+            vpc_subnets            = {}
           }, c)
         ]
+        description = try(v.description, null)
+        title       = try(v.title, null)
       }
     }
     egress_policies = {
       for k, v in local._data.egress_policies : k => {
+        title = try(v.title, null)
         from = merge({
+          access_levels = []
           identity_type = null
           identities    = []
+          resources     = []
         }, try(v.from, {}))
         to = {
+          external_resources = try(v.to.external_resources, null)
           operations = [
             for o in try(v.to.operations, []) : merge({
               method_selectors     = []
@@ -59,13 +65,14 @@ locals {
               service_name         = null
             }, o)
           ]
-          resources              = try(v.to.resources, [])
-          resource_type_external = try(v.to.resource_type_external, false)
+          resources = try(v.to.resources, [])
+          roles     = try(v.to.roles, [])
         }
       }
     }
     ingress_policies = {
       for k, v in local._data.ingress_policies : k => {
+        title = try(v.title, null)
         from = merge({
           access_levels = []
           identity_type = null
@@ -81,7 +88,33 @@ locals {
             }, o)
           ]
           resources = try(v.to.resources, [])
+          roles     = try(v.to.roles, [])
         }
+      }
+    }
+    perimeters = {
+      for k, v in local._data.perimeters :
+      k => {
+        description             = try(v.description, null)
+        ignore_resource_changes = try(v.ignore_resource_changes, false)
+        title                   = try(v.title, null)
+        spec = !can(v.spec) ? null : merge(v.spec, {
+          access_levels           = try(v.spec.access_levels, [])
+          egress_policies         = try(v.spec.egress_policies, [])
+          ingress_policies        = try(v.spec.ingress_policies, [])
+          restricted_services     = try(v.spec.restricted_services, [])
+          resources               = try(v.spec.resources, [])
+          vpc_accessible_services = try(v.spec.vpc_accessible_services, null)
+        })
+        status = !can(v.status) ? null : merge(v.status, {
+          access_levels           = try(v.status.access_levels, [])
+          egress_policies         = try(v.status.egress_policies, [])
+          ingress_policies        = try(v.status.ingress_policies, [])
+          restricted_services     = try(v.status.restricted_services, [])
+          resources               = try(v.status.resources, [])
+          vpc_accessible_services = try(v.status.vpc_accessible_services, null)
+        })
+        use_explicit_dry_run_spec = try(v.use_explicit_dry_run_spec, false)
       }
     }
   }

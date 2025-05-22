@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ locals {
 module "project_main" {
   source          = "../../../modules/project"
   name            = var.prj_main_id
-  project_create  = var.prj_main_create != null
+  project_reuse   = var.prj_main_create != null ? null : {}
   billing_account = try(var.prj_main_create.billing_account_id, null)
   parent          = try(var.prj_main_create.parent, null)
   # Enable Shared VPC by default, some use cases will use this project as host
@@ -67,7 +67,7 @@ module "project_onprem" {
   source          = "../../../modules/project"
   count           = var.prj_onprem_id != null ? 1 : 0
   name            = var.prj_onprem_id
-  project_create  = var.prj_onprem_create != null
+  project_reuse   = var.prj_onprem_create != null ? null : {}
   billing_account = try(var.prj_onprem_create.billing_account_id, null)
   parent          = try(var.prj_onprem_create.parent, null)
   services = [
@@ -81,7 +81,7 @@ module "project_prj1" {
   source          = "../../../modules/project"
   count           = var.prj_prj1_id != null ? 1 : 0
   name            = var.prj_prj1_id
-  project_create  = var.prj_prj1_create != null
+  project_reuse   = var.prj_prj1_create != null ? null : {}
   billing_account = try(var.prj_prj1_create.billing_account_id, null)
   parent          = try(var.prj_prj1_create.parent, null)
   services = [
@@ -95,7 +95,7 @@ module "project_svc1" {
   source          = "../../../modules/project"
   count           = var.prj_svc1_id != null ? 1 : 0
   name            = var.prj_svc1_id
-  project_create  = var.prj_svc1_create != null
+  project_reuse   = var.prj_svc1_create != null ? null : {}
   billing_account = try(var.prj_svc1_create.billing_account_id, null)
   parent          = try(var.prj_svc1_create.parent, null)
   shared_vpc_service_config = {
@@ -569,7 +569,7 @@ module "vpc_sc" {
       }
     }
   }
-  service_perimeters_regular = {
+  perimeters = {
     cloudrun = {
       status = {
         resources = [

@@ -85,10 +85,16 @@
           "additionalProperties": false,
           "patternProperties": {
             "^(?:DATA_READ|DATA_WRITE|ADMIN_READ)$": {
-              "type": "array",
-              "items": {
-                "type": "string",
-                "pattern": "@"
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "exempted_members": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "@"
+                  }
+                }
               }
             }
           }
@@ -164,66 +170,69 @@
       "additionalProperties": false,
       "patternProperties": {
         "^[a-z]+\\.": {
-          "inherit_from_parent": {
-            "type": "boolean"
-          },
-          "reset": {
-            "type": "boolean"
-          },
-          "rules": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "allow": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "properties": {
-                    "all": {
-                      "type": "boolean"
-                    },
-                    "values": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
+          "type": "object",
+          "properties": {
+            "inherit_from_parent": {
+              "type": "boolean"
+            },
+            "reset": {
+              "type": "boolean"
+            },
+            "rules": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "allow": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "all": {
+                        "type": "boolean"
+                      },
+                      "values": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
                       }
                     }
-                  }
-                },
-                "deny": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "properties": {
-                    "all": {
-                      "type": "boolean"
-                    },
-                    "values": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
+                  },
+                  "deny": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "all": {
+                        "type": "boolean"
+                      },
+                      "values": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
                       }
                     }
-                  }
-                },
-                "enforce": {
-                  "type": "boolean"
-                },
-                "condition": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "properties": {
-                    "description": {
-                      "type": "string"
-                    },
-                    "expression": {
-                      "type": "string"
-                    },
-                    "location": {
-                      "type": "string"
-                    },
-                    "title": {
-                      "type": "string"
+                  },
+                  "enforce": {
+                    "type": "boolean"
+                  },
+                  "condition": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "description": {
+                        "type": "string"
+                      },
+                      "expression": {
+                        "type": "string"
+                      },
+                      "location": {
+                        "type": "string"
+                      },
+                      "title": {
+                        "type": "string"
+                      }
                     }
                   }
                 }
@@ -255,7 +264,7 @@
           "type": "array",
           "items": {
             "type": "string",
-            "pattern": "^(?:domain:|group:|serviceAccount:|user:|principal:|principalSet:|project-factory|project-factory-dev|project-factory-prod|networking|security|vpcsc)"
+            "pattern": "^(?:domain:|group:|serviceAccount:|user:|principal:|principalSet:|project-factory|project-factory-dev|project-factory-prod|networking|security|vpcsc|self)"
           }
         }
       }
@@ -272,7 +281,7 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "pattern": "^(?:domain:|group:|serviceAccount:|user:|principal:|principalSet:|project-factory|project-factory-dev|project-factory-prod|networking|security|vpcsc)"
+                "pattern": "^(?:domain:|group:|serviceAccount:|user:|principal:|principalSet:|project-factory|project-factory-dev|project-factory-prod|networking|security|vpcsc|self)"
               }
             },
             "role": {
@@ -312,7 +321,7 @@
           "properties": {
             "member": {
               "type": "string",
-              "pattern": "^(?:domain:|group:|serviceAccount:|user:|principal:|principalSet:|project-factory|project-factory-dev|project-factory-prod|networking|security|vpcsc)"
+              "pattern": "^(?:domain:|group:|serviceAccount:|user:|principal:|principalSet:|project-factory|project-factory-dev|project-factory-prod|networking|security|vpcsc|self)"
             },
             "role": {
               "type": "string",
@@ -345,7 +354,7 @@
       "type": "object",
       "additionalProperties": false,
       "patternProperties": {
-        "^(?:domain:|group:|serviceAccount:|user:|principal:|principalSet:)": {
+        "^[a-z]+[a-z-]+$": {
           "type": "array",
           "items": {
             "type": "string",

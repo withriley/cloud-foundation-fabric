@@ -1,5 +1,5 @@
 /**
- * Copyright 2022 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,8 +36,10 @@ variable "access_levels" {
       negate                 = optional(bool)
       regions                = optional(list(string), [])
       required_access_levels = optional(list(string), [])
+      vpc_subnets            = optional(map(list(string)), {})
     })), [])
     description = optional(string)
+    title       = optional(string)
   }))
   default  = {}
   nullable = false
@@ -81,18 +83,22 @@ variable "access_policy_create" {
 variable "egress_policies" {
   description = "Egress policy definitions that can be referenced in perimeters."
   type = map(object({
+    title = optional(string)
     from = object({
+      access_levels = optional(list(string), [])
       identity_type = optional(string)
       identities    = optional(list(string))
+      resources     = optional(list(string), [])
     })
     to = object({
+      external_resources = optional(list(string))
       operations = optional(list(object({
         method_selectors     = optional(list(string))
         permission_selectors = optional(list(string))
         service_name         = string
       })), [])
-      resources              = optional(list(string))
-      resource_type_external = optional(bool, false)
+      resources = optional(list(string))
+      roles     = optional(list(string))
     })
   }))
   default  = {}
@@ -110,20 +116,25 @@ variable "egress_policies" {
   validation {
     condition = alltrue([
       for k, v in var.egress_policies : v.from.identities == null ? true : alltrue([
-        for identity in v.from.identities : can(regex("^(?:serviceAccount:|user:|group:|principal:)", identity))
+        for identity in v.from.identities : can(regex("^(?:serviceAccount:|user:|group:|principal:|principalSet:)", identity))
       ])
     ])
-    error_message = "Invalid `from.identity`. It needs to start with on of the prefixes: 'serviceAccount:', 'user:', 'group:' or 'principal:'."
+    error_message = "Invalid `from.identity`. It needs to start with on of the prefixes: 'serviceAccount:', 'user:', 'group:', 'principal:' or 'principalSet:."
   }
 }
 
 variable "factories_config" {
   description = "Paths to folders that enable factory functionality."
   type = object({
-    access_levels       = optional(string)
-    egress_policies     = optional(string)
-    ingress_policies    = optional(string)
-    restricted_services = optional(string, "data/restricted-services.yaml")
+    access_levels    = optional(string)
+    egress_policies  = optional(string)
+    ingress_policies = optional(string)
+    perimeters       = optional(string)
+    context = optional(object({
+      resource_sets = optional(map(list(string)), {})
+      service_sets  = optional(map(list(string)), {})
+      identity_sets = optional(map(list(string)), {})
+    }), {})
   })
   nullable = false
   default  = {}
@@ -168,6 +179,7 @@ variable "iam_bindings_additive" {
 variable "ingress_policies" {
   description = "Ingress policy definitions that can be referenced in perimeters."
   type = map(object({
+    title = optional(string)
     from = object({
       access_levels = optional(list(string), [])
       identity_type = optional(string)
@@ -181,6 +193,7 @@ variable "ingress_policies" {
         service_name         = string
       })), [])
       resources = optional(list(string))
+      roles     = optional(list(string))
     })
   }))
   default  = {}
@@ -198,33 +211,26 @@ variable "ingress_policies" {
   validation {
     condition = alltrue([
       for k, v in var.ingress_policies : v.from.identities == null ? true : alltrue([
-        for identity in v.from.identities : can(regex("^(?:serviceAccount:|user:|group:|principal:)", identity))
+        for identity in v.from.identities : can(regex("^(?:serviceAccount:|user:|group:|principal:|principalSet:)", identity))
       ])
     ])
-    error_message = "Invalid `from.identity`. It needs to start with on of the prefixes: 'serviceAccount:', 'user:', 'group:' or 'principal:'."
+    error_message = "Invalid `from.identity`. It needs to start with on of the prefixes: 'serviceAccount:', 'user:', 'group:', 'principal:', 'principalSet:'."
   }
 }
 
-variable "service_perimeters_bridge" {
-  description = "Bridge service perimeters."
-  type = map(object({
-    spec_resources            = optional(list(string))
-    status_resources          = optional(list(string))
-    use_explicit_dry_run_spec = optional(bool, false)
-  }))
-  default = {}
-}
-
-variable "service_perimeters_regular" {
+variable "perimeters" {
   description = "Regular service perimeters."
   type = map(object({
-    description = optional(string)
+    description               = optional(string)
+    ignore_resource_changes   = optional(bool, false)
+    title                     = optional(string)
+    use_explicit_dry_run_spec = optional(bool, false)
     spec = optional(object({
       access_levels       = optional(list(string))
-      resources           = optional(list(string))
-      restricted_services = optional(list(string))
       egress_policies     = optional(list(string))
       ingress_policies    = optional(list(string))
+      restricted_services = optional(list(string))
+      resources           = optional(list(string))
       vpc_accessible_services = optional(object({
         allowed_services   = list(string)
         enable_restriction = optional(bool, true)
@@ -232,17 +238,22 @@ variable "service_perimeters_regular" {
     }))
     status = optional(object({
       access_levels       = optional(list(string))
-      resources           = optional(list(string))
-      restricted_services = optional(list(string))
       egress_policies     = optional(list(string))
       ingress_policies    = optional(list(string))
+      resources           = optional(list(string))
+      restricted_services = optional(list(string))
       vpc_accessible_services = optional(object({
         allowed_services   = list(string)
-        enable_restriction = bool
+        enable_restriction = optional(bool, true)
       }))
     }))
-    use_explicit_dry_run_spec = optional(bool, false)
   }))
   default  = {}
   nullable = false
+}
+
+variable "project_id_search_scope" {
+  description = "Set this to an organization or folder ID to use Cloud Asset Inventory to automatically translate project ids to numbers."
+  type        = string
+  default     = null
 }

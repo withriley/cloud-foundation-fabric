@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,10 +59,10 @@ locals {
         "roles/resourcemanager.organizationAdmin",
         "roles/resourcemanager.projectCreator",
         "roles/resourcemanager.tagAdmin",
-        "roles/iam.workforcePoolAdmin"
       ]
       additive = concat(
         [
+          "roles/iam.workforcePoolAdmin",
           "roles/orgpolicy.policyAdmin"
         ],
         local.billing_mode != "org" ? [] : [
@@ -99,7 +99,6 @@ locals {
     (module.automation-tf-bootstrap-sa.iam_email) = {
       authoritative = [
         "roles/essentialcontacts.admin",
-        "roles/iam.workforcePoolAdmin",
         "roles/logging.admin",
         "roles/resourcemanager.organizationAdmin",
         "roles/resourcemanager.projectCreator",
@@ -109,6 +108,7 @@ locals {
       additive = concat(
         [
           "roles/iam.organizationRoleAdmin",
+          "roles/iam.workforcePoolAdmin",
           "roles/orgpolicy.policyAdmin"
         ],
         local.billing_mode != "org" ? [] : [
@@ -188,9 +188,16 @@ locals {
       ]
     }
   }
+  # Check if boostrap_user comes from WIF
+  bootstrap_principal = var.bootstrap_user == null ? null : (
+    strcontains(var.bootstrap_user, ":")
+    ? var.bootstrap_user
+    : "user:${var.bootstrap_user}"
+  )
+
   # bootstrap user bindings
   iam_user_bootstrap_bindings = var.bootstrap_user == null ? {} : {
-    "user:${var.bootstrap_user}" = {
+    (local.bootstrap_principal) = {
       authoritative = [
         "roles/logging.admin",
         "roles/owner",
@@ -198,7 +205,6 @@ locals {
         "roles/resourcemanager.projectCreator",
         "roles/resourcemanager.tagAdmin"
       ]
-      # TODO: align additive roles with the README
       additive = (
         local.billing_mode != "org" ? [] : [
           "roles/billing.admin"

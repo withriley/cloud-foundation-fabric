@@ -24,11 +24,12 @@ locals {
     "compute.googleapis.com",
     "datalineage.googleapis.com",
     "iam.googleapis.com",
+    "logging.googleapis.com",
+    "monitoring.googleapis.com",
     "servicenetworking.googleapis.com",
     "serviceusage.googleapis.com",
-    "stackdriver.googleapis.com",
+    "storage-component.googleapis.com",
     "storage.googleapis.com",
-    "storage-component.googleapis.com"
   ]
   iam_cur = {
     "roles/bigquery.dataOwner" = [
@@ -84,7 +85,7 @@ module "cur-project" {
   source          = "../../../modules/project"
   parent          = var.project_config.parent
   billing_account = var.project_config.billing_account_id
-  project_create  = var.project_config.billing_account_id != null
+  project_reuse   = var.project_config.billing_account_id != null ? null : {}
   prefix = (
     var.project_config.billing_account_id == null ? null : var.prefix
   )

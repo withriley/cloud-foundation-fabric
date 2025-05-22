@@ -20,16 +20,17 @@ module "project" {
   billing_account = try(var.project_create.billing_account_id, null)
   prefix          = var.project_create == null ? null : var.prefix
   name            = var.project_id
-  project_create  = var.project_create != null
+  project_reuse   = var.project_create != null ? null : {}
   services = [
     "compute.googleapis.com",
-    "memcache.googleapis.com",
-    "redis.googleapis.com",
-    "sqladmin.googleapis.com",
-    "sql-component.googleapis.com",
-    "stackdriver.googleapis.com",
     "dns.googleapis.com",
     "iam.googleapis.com",
+    "logging.googleapis.com",
+    "memcache.googleapis.com",
+    "redis.googleapis.com",
+    "sql-component.googleapis.com",
+    "sqladmin.googleapis.com",
+    "monitoring.googleapis.com",
   ]
   shared_vpc_service_config = {
     attach       = true

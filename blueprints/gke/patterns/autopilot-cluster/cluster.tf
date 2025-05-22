@@ -22,7 +22,7 @@ locals {
   )
   cluster_sa = (
     local._cluster_sa == "default"
-    ? module.project.service_accounts.default.compute
+    ? module.project.default_service_accounts.compute
     : local._cluster_sa
   )
   cluster_sa_roles = [
@@ -107,6 +107,7 @@ module "cluster" {
     enable_api_server_metrics         = true
     enable_controller_manager_metrics = true
     enable_scheduler_metrics          = true
+    enable_cadvisor_metrics           = true
   }
   logging_config = {
     enable_api_server_logs         = true

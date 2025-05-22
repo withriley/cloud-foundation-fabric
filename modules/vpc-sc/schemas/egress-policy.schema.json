@@ -8,11 +8,21 @@
   ],
   "additionalProperties": false,
   "properties": {
+    "title": {
+      "type": "string"
+    },
     "from": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "access_levels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "identity_type": {
+          "type": "string",
           "enum": [
             "IDENTITY_TYPE_UNSPECIFIED",
             "ANY_IDENTITY",
@@ -27,6 +37,12 @@
             "type": "string",
             "pattern": "^(?:serviceAccount:|user:|group:|principal:)"
           }
+        },
+        "resources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
@@ -34,6 +50,12 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "external_resources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "operations": {
           "type": "array",
           "items": {
@@ -67,8 +89,11 @@
             "type": "string"
           }
         },
-        "resource_type_external": {
-          "type": "boolean"
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     }

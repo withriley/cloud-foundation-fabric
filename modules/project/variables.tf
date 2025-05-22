@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,6 @@ variable "default_service_account" {
   }
 }
 
-
 variable "deletion_policy" {
   description = "Deletion policy setting for this project."
   default     = "DELETE"
@@ -81,9 +80,14 @@ variable "descriptive_name" {
 variable "factories_config" {
   description = "Paths to data files and folders that enable factory functionality."
   type = object({
-    custom_roles = optional(string)
-    org_policies = optional(string)
-    quotas       = optional(string)
+    custom_roles  = optional(string)
+    observability = optional(string)
+    org_policies  = optional(string)
+    quotas        = optional(string)
+    context = optional(object({
+      notification_channels = optional(map(string), {})
+      org_policies          = optional(map(map(string)), {})
+    }), {})
   })
   nullable = false
   default  = {}
@@ -100,66 +104,6 @@ variable "lien_reason" {
   description = "If non-empty, creates a project lien with this description."
   type        = string
   default     = null
-}
-
-variable "logging_data_access" {
-  description = "Control activation of data access logs. Format is service => { log type => [exempted members]}. The special 'allServices' key denotes configuration for all services."
-  type        = map(map(list(string)))
-  nullable    = false
-  default     = {}
-  validation {
-    condition = alltrue(flatten([
-      for k, v in var.logging_data_access : [
-        for kk, vv in v : contains(["DATA_READ", "DATA_WRITE", "ADMIN_READ"], kk)
-      ]
-    ]))
-    error_message = "Log type keys for each service can only be one of 'DATA_READ', 'DATA_WRITE', 'ADMIN_READ'."
-  }
-}
-
-variable "logging_exclusions" {
-  description = "Logging exclusions for this project in the form {NAME -> FILTER}."
-  type        = map(string)
-  default     = {}
-  nullable    = false
-}
-
-variable "logging_sinks" {
-  description = "Logging sinks to create for this project."
-  type = map(object({
-    bq_partitioned_table = optional(bool, false)
-    description          = optional(string)
-    destination          = string
-    disabled             = optional(bool, false)
-    exclusions           = optional(map(string), {})
-    filter               = optional(string)
-    iam                  = optional(bool, true)
-    type                 = string
-    unique_writer        = optional(bool, true)
-  }))
-  default  = {}
-  nullable = false
-  validation {
-    condition = alltrue([
-      for k, v in var.logging_sinks :
-      contains(["bigquery", "logging", "project", "pubsub", "storage"], v.type)
-    ])
-    error_message = "Type must be one of 'bigquery', 'logging', 'project', 'pubsub', 'storage'."
-  }
-  validation {
-    condition = alltrue([
-      for k, v in var.logging_sinks :
-      v.bq_partitioned_table != true || v.type == "bigquery"
-    ])
-    error_message = "Can only set bq_partitioned_table when type is `bigquery`."
-  }
-}
-
-variable "metric_scopes" {
-  description = "List of projects that will act as metric scopes for this project."
-  type        = list(string)
-  default     = []
-  nullable    = false
 }
 
 variable "name" {
@@ -188,6 +132,7 @@ variable "org_policies" {
         location    = optional(string)
         title       = optional(string)
       }), {})
+      parameters = optional(string)
     })), [])
   }))
   default  = {}
@@ -214,10 +159,24 @@ variable "prefix" {
   }
 }
 
-variable "project_create" {
-  description = "Create project. When set to false, uses a data source to reference existing project."
-  type        = bool
-  default     = true
+variable "project_reuse" {
+  description = "Reuse existing project if not null. If name and number are not passed in, a data source is used."
+  type = object({
+    use_data_source = optional(bool, true)
+    project_attributes = optional(object({
+      name             = string
+      number           = number
+      services_enabled = optional(list(string), [])
+    }))
+  })
+  default = null
+  validation {
+    condition = (
+      try(var.project_reuse.use_data_source, null) != false ||
+      try(var.project_reuse.project_attributes, null) != null
+    )
+    error_message = "Reuse datasource can be disabled only if project attributes are set."
+  }
 }
 
 variable "service_agents_config" {
@@ -225,7 +184,6 @@ variable "service_agents_config" {
   type = object({
     create_primary_agents = optional(bool, true)
     grant_default_roles   = optional(bool, true)
-    services_enabled      = optional(list(string), [])
   })
   default  = {}
   nullable = false
@@ -262,7 +220,8 @@ variable "shared_vpc_host_config" {
     enabled          = bool
     service_projects = optional(list(string), [])
   })
-  default = null
+  nullable = true
+  default  = null
 }
 
 variable "shared_vpc_service_config" {
@@ -303,6 +262,15 @@ variable "skip_delete" {
   #   condition     = var.skip_delete != null
   #   error_message = "skip_delete is deprecated. Use deletion_policy."
   # }
+}
+
+variable "universe" {
+  description = "GCP universe where to deploy the project. The prefix will be prepended to the project id."
+  type = object({
+    prefix               = string
+    unavailable_services = optional(list(string), [])
+  })
+  default = null
 }
 
 variable "vpc_sc" {

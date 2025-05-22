@@ -21,12 +21,17 @@ module "project" {
   name            = var.project_id
   parent          = try(var.project_create_config.parent_id, null)
   billing_account = try(var.project_create_config.billing_account_id, null)
-  project_create  = try(var.project_create_config.billing_account_id, null) != null
-  prefix          = var.prefix
+  project_reuse = (
+    try(var.project_create_config.billing_account_id, null) != null
+    ? null
+    : {}
+  )
+  prefix = var.prefix
   services = [
     "compute.googleapis.com",
     "dns.googleapis.com",
     "networkconnectivity.googleapis.com",
-    "stackdriver.googleapis.com",
+    "logging.googleapis.com",
+    "monitoring.googleapis.com",
   ]
 }

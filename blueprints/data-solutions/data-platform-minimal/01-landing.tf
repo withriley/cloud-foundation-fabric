@@ -44,7 +44,7 @@ module "land-project" {
   source          = "../../../modules/project"
   parent          = var.project_config.parent
   billing_account = var.project_config.billing_account_id
-  project_create  = var.project_config.billing_account_id != null
+  project_reuse   = var.project_config.billing_account_id != null ? null : {}
   prefix = (
     var.project_config.billing_account_id == null ? null : var.prefix
   )
@@ -67,10 +67,11 @@ module "land-project" {
     "cloudresourcemanager.googleapis.com",
     "datalineage.googleapis.com",
     "iam.googleapis.com",
+    "logging.googleapis.com",
+    "monitoring.googleapis.com",
     "serviceusage.googleapis.com",
-    "stackdriver.googleapis.com",
-    "storage.googleapis.com",
     "storage-component.googleapis.com",
+    "storage.googleapis.com",
   ]
   service_encryption_key_ids = {
     "bigquery.googleapis.com" = compact([var.service_encryption_keys.bq])

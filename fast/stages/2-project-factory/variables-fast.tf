@@ -14,6 +14,15 @@
  * limitations under the License.
  */
 
+variable "automation" {
+  # tfdoc:variable:source 0-bootstrap
+  description = "Automation resources created by the bootstrap stage."
+  type = object({
+    outputs_bucket = string
+  })
+  nullable = false
+}
+
 variable "billing_account" {
   # tfdoc:variable:source 0-bootstrap
   description = "Billing account id. If billing account is not part of the same org set `is_org_level` to false."
@@ -57,6 +66,25 @@ variable "locations" {
   description = "Optional locations for GCS, BigQuery, and logging buckets created here."
   type = object({
     gcs = optional(string)
+  })
+  nullable = false
+  default  = {}
+}
+
+variable "perimeters" {
+  # tfdoc:variable:source 1-vpcsc
+  description = "Optional VPC-SC perimeter ids."
+  type        = map(string)
+  nullable    = false
+  default     = {}
+}
+
+variable "org_policy_tags" {
+  # tfdoc:variable:source 0-bootstrap
+  description = "Optional organization policy tag values."
+  type = object({
+    key_name = optional(string, "org-policies")
+    values   = optional(map(string), {})
   })
   nullable = false
   default  = {}

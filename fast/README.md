@@ -17,7 +17,7 @@ FAST uses the concept of stages, which individually perform precise tasks but ta
 From the perspective of FAST's overall design, stages also work as contracts or interfaces, defining a set of pre-requisites and inputs required to perform their designed task and generating outputs needed by other stages lower in the chain. The diagram below shows the relationships between stages.
 
 <p align="center">
-  <img src="stages.svg" alt="Stages diagram">
+  <img src="stages.png" alt="Stages diagram">
 </p>
 
 Please refer to the [stages](./stages/) section for further details on each stage. For details on tenant-level stages which introduce a deeper level of autonomy via nested FAST setups rooted in a top-level folder, refer to the [multitenant](#multitenant-organizations) section below.
@@ -38,15 +38,11 @@ FAST uses YAML-based factories to deploy subnets and firewall rules and, as its 
 
 One of our objectives with FAST is to provide a lightweight reference design for the IaC repositories, and a built-in implementation for running our code in automated pipelines. Our CI/CD approach leverages [Workload Identity Federation](https://cloud.google.com/iam/docs/workload-identity-federation), and provides sample workflow configurations for several major providers. Refer to the [CI/CD section in the bootstrap stage](./stages/0-bootstrap/README.md#cicd) for more details. We also provide separate [optional small stages](./extras/) to help you configure your CI/CD provider.
 
+<!-- TODO: move CI/CD documentation to its own file -->
+
 ### Multitenant organizations
 
-FAST has built-in support for multitenancy implemented in [an optional stage 1](./stages/1-tenant-factory/). Tenants can optionally be created with FAST compatibility, allowing them independent use of stages 1+ in their own context.
-
-The following diagram is a high-level overview of stages used with multitenancy.
-
-<p align="center">
-  <img src="tenants-stages.svg" alt="Stages for multitenancy.">
-</p>
+FAST has built-in support for multitenancy implemented in [an add-on stage](./addons/1-resman-tenants/). Tenants can optionally be created with FAST compatibility, allowing them independent use of stages 1+ in their own context.
 
 ## Implementation
 
@@ -64,12 +60,3 @@ Since we expect users to customize FAST to their specific needs, we strive to ma
 We also recognize that FAST users don't need all of its features. Therefore, you don't need to use our project factory or our GKE implementation if you don't want to. Instead, remove those stages or pieces of code and keep what suits you.
 
 Those familiar with Python will note that FAST follows many of the maxims in the [Zen of Python](https://www.python.org/dev/peps/pep-0020/#id2).
-
-## Roadmap
-
-Besides the features already described, FAST also includes:
-
-- Stage to deploy environment-specific multitenant GKE clusters following Google's best practices
-- Stage to deploy a fully featured data platform
-- Reference implementation to use FAST in CI/CD pipelines
-- Static policy enforcement (planned)

@@ -32,18 +32,19 @@ module "project" {
     ? var.project_create.parent
     : null
   )
-  prefix         = var.prefix
-  project_create = var.project_create != null
-  name           = var.project_id
+  prefix        = var.prefix
+  project_reuse = var.project_create != null ? null : {}
+  name          = var.project_id
   services = concat([
     "compute.googleapis.com",
-    "iap.googleapis.com",
-    "stackdriver.googleapis.com",
     "chronicle.googleapis.com",
-    "container.googleapis.com",
-    "gkehub.googleapis.com",
     "connectgateway.googleapis.com",
-    "gkeconnect.googleapis.com"
+    "container.googleapis.com",
+    "gkeconnect.googleapis.com",
+    "gkehub.googleapis.com",
+    "iap.googleapis.com",
+    "logging.googleapis.com",
+    "monitoring.googleapis.com",
   ])
 }
 

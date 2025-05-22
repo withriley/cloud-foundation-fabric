@@ -56,24 +56,25 @@ module "project" {
   name            = var.project_id
   parent          = try(var.project_create.parent, null)
   billing_account = try(var.project_create.billing_account_id, null)
-  project_create  = var.project_create != null
+  project_reuse   = var.project_create != null ? null : {}
   prefix          = var.project_create == null ? null : var.prefix
   services = [
     "aiplatform.googleapis.com",
     "bigquery.googleapis.com",
-    "bigquerystorage.googleapis.com",
     "bigqueryreservation.googleapis.com",
+    "bigquerystorage.googleapis.com",
     "composer.googleapis.com",
     "compute.googleapis.com",
-    "dialogflow.googleapis.com",
     "dataflow.googleapis.com",
+    "dialogflow.googleapis.com",
+    "logging.googleapis.com",
     "ml.googleapis.com",
+    "monitoring.googleapis.com",
     "notebooks.googleapis.com",
     "orgpolicy.googleapis.com",
     "servicenetworking.googleapis.com",
-    "stackdriver.googleapis.com",
+    "storage-component.googleapis.com",
     "storage.googleapis.com",
-    "storage-component.googleapis.com"
   ]
 
   shared_vpc_service_config = local.shared_vpc_project == null ? null : {

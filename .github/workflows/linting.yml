@@ -1,4 +1,4 @@
-# Copyright 2024 Google LLC
+# Copyright 2025 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -95,7 +95,8 @@ jobs:
         run: |
           yapf -p -d -r \
             tools/*.py \
-            blueprints
+            blueprints \
+            fast
 
       - name: Check blueprint metadata
         id: metadata
@@ -105,6 +106,23 @@ jobs:
       - name: Check modules versions
         id: versions
         run: |
-          OUTPUT=$(find . -type f -name 'versions.tf' -exec diff -ub default-versions.tf {} \;)
-          echo "${OUTPUT}"
-          [[ -z "${OUTPUT}" ]]
+          OUTPUT_TF=$(find . -type f -name 'versions.tf' -exec diff -I '[[:space:]]*module_name' -ub default-versions.tf {} \;)
+          if [[ -n "${OUTPUT_TF}" ]] ; then
+            echo "Terraform versions.tf:"
+            echo "${OUTPUT_TF}"
+          fi
+          OUTPUT_TOFU=$(find . -type f -name 'versions.tofu' -exec diff -I '[[:space:]]*module_name' -ub default-versions.tofu {} \;)
+          if [[ -n "${OUTPUT_TOFU}" ]] ; then
+            echo "Terraform versions.tofu:"
+            echo "${OUTPUT_TOFU}"
+          fi
+          egrep -v "(required_version|module_name)" default-versions.tf > /tmp/versions.tf
+          egrep -v "(required_version|module_name)" default-versions.tofu > /tmp/versions.tofu
+          diff -rub /tmp/versions.tf /tmp/versions.tofu
+          DIFF_EC=$?
+          [[ "${DIFF_EC}" -eq "0" ||  -z "${OUTPUT_TF}" || -z "${OUTPUT_TOFU}" ]]
+
+      - name: Check for diverging files
+        id: duplicates
+        run: |
+          python3 tools/duplicate-diff.py

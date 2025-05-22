@@ -24,16 +24,16 @@ module "project" {
     ? var.project_create.parent
     : null
   )
-  name           = var.project_id
-  project_create = var.project_create != null
+  name          = var.project_id
+  project_reuse = var.project_create != null ? null : {}
   services = [
     "apigee.googleapis.com",
     "bigquery.googleapis.com",
     "cloudbuild.googleapis.com",
     "cloudfunctions.googleapis.com",
     "cloudscheduler.googleapis.com",
-    "logging.googleapis.com",
     "compute.googleapis.com",
+    "logging.googleapis.com",
     "pubsub.googleapis.com",
     "servicenetworking.googleapis.com",
     "storage.googleapis.com"

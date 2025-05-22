@@ -17,16 +17,14 @@
 # tfdoc:file:description Automation projects locals and resources.
 
 locals {
-  automation_buckets = flatten([
-    for k, v in local.projects : [
-      for ks, kv in try(v.automation.buckets, {}) : merge(kv, {
-        automation_project = v.automation.project
-        name               = ks
-        prefix             = v.prefix
-        project            = k
-      })
-    ]
-  ])
+  automation_buckets = {
+    for k, v in local.projects :
+    k => merge(try(v.automation.bucket, {}), {
+      automation_project = v.automation.project
+      prefix             = v.prefix
+      project_name       = v.name
+    }) if try(v.automation.bucket, null) != null
+  }
   automation_sa = flatten([
     for k, v in local.projects : [
       for ks, kv in try(v.automation.service_accounts, {}) : merge(kv, {
@@ -34,24 +32,25 @@ locals {
         name               = ks
         prefix             = v.prefix
         project            = k
+        project_name       = v.name
       })
     ]
   ])
 }
 
-module "automation-buckets" {
-  source = "../gcs"
-  for_each = {
-    for k in local.automation_buckets : "${k.project}/${k.name}" => k
-  }
+module "automation-bucket" {
+  source   = "../gcs"
+  for_each = local.automation_buckets
+  # we cannot use interpolation here as we would get a cycle
+  # from the IAM dependency in the outputs of the main project
   project_id     = each.value.automation_project
   prefix         = each.value.prefix
-  name           = "${each.value.project}-${each.value.name}"
+  name           = "${each.value.project_name}-tf-state"
   encryption_key = lookup(each.value, "encryption_key", null)
   iam = {
     for k, v in lookup(each.value, "iam", {}) : k => [
       for vv in v : try(
-        module.automation-service-accounts["${each.value.project}/${vv}"].iam_email,
+        module.automation-service-accounts["${each.key}/${vv}"].iam_email,
         var.factories_config.context.iam_principals[vv],
         vv
       )
@@ -61,9 +60,20 @@ module "automation-buckets" {
     for k, v in lookup(each.value, "iam_bindings", {}) : k => merge(v, {
       members = [
         for vv in v.members : try(
-          module.automation-service-accounts["${each.value.project}/${vv}"].iam_email,
+          # rw (infer local project and automation prefix)
+          module.automation-service-accounts["${each.key}/automation/${vv}"].iam_email,
+          # automation/rw or sa (infer local project)
+          module.automation-service-accounts["${each.key}/${vv}"].iam_email,
+          # project/automation/rw project/sa
           var.factories_config.context.iam_principals[vv],
-          vv
+          # fully specified principal
+          vv,
+          # passthrough + error handling using tonumber until Terraform gets fail/raise function
+          (
+            strcontains(vv, ":")
+            ? vv
+            : tonumber("[Error] Invalid member: '${vv}' in automation bucket '${each.key}'")
+          )
         )
       ]
     })
@@ -71,7 +81,7 @@ module "automation-buckets" {
   iam_bindings_additive = {
     for k, v in lookup(each.value, "iam_bindings_additive", {}) : k => merge(v, {
       member = try(
-        module.automation-service-accounts["${each.value.project}/${v.member}"].iam_email,
+        module.automation-service-accounts["${each.key}/${v.member}"].iam_email,
         var.factories_config.context.iam_principals[v.member],
         v.member
       )
@@ -83,25 +93,34 @@ module "automation-buckets" {
     lookup(each.value, "location", null),
     var.data_defaults.storage_location
   )
-  storage_class               = lookup(each.value, "storage_class", "STANDARD")
-  uniform_bucket_level_access = lookup(each.value, "uniform_bucket_level_access", true)
-  versioning                  = lookup(each.value, "versioning", false)
+  storage_class = lookup(
+    each.value, "storage_class", "STANDARD"
+  )
+  uniform_bucket_level_access = lookup(
+    each.value, "uniform_bucket_level_access", true
+  )
+  versioning = lookup(
+    each.value, "versioning", false
+  )
 }
 
 module "automation-service-accounts" {
   source = "../iam-service-account"
   for_each = {
-    for k in local.automation_sa : "${k.project}/${k.name}" => k
+    for k in local.automation_sa : "${k.project}/automation/${k.name}" => k
   }
+  # we cannot use interpolation here as we would get a cycle
+  # from the IAM dependency in the outputs of the main project
   project_id  = each.value.automation_project
   prefix      = each.value.prefix
-  name        = "${each.value.project}-${each.value.name}"
+  name        = "${each.value.project_name}-${each.value.name}"
   description = lookup(each.value, "description", null)
   display_name = lookup(
     each.value,
     "display_name",
     "Service account ${each.value.name} for ${each.value.project}."
   )
+  # TODO: also support short form for service accounts in this project
   iam = {
     for k, v in lookup(each.value, "iam", {}) : k => [
       for vv in v : lookup(

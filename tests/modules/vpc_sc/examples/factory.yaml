@@ -1,4 +1,4 @@
-# Copyright 2024 Google LLC
+# Copyright 2025 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -49,9 +49,9 @@ values:
     parent: accessPolicies/12345678
     timeouts: null
     title: identity-user1
-  module.test.google_access_context_manager_service_perimeter.regular["r1"]:
-    description: null
-    name: accessPolicies/12345678/servicePerimeters/r1
+  module.test.google_access_context_manager_service_perimeter.regular["perimeter-north"]:
+    description: Main perimeter
+    name: accessPolicies/12345678/servicePerimeters/perimeter-north
     parent: accessPolicies/12345678
     perimeter_type: PERIMETER_TYPE_REGULAR
     spec: []
@@ -62,7 +62,7 @@ values:
           - serviceAccount:bar@myproject.iam.gserviceaccount.com
           - serviceAccount:foo@myproject.iam.gserviceaccount.com
           identity_type: null
-          source_restriction: null
+          source_restriction: SOURCE_RESTRICTION_DISABLED
           sources: []
         egress_to:
         - external_resources: null
@@ -73,7 +73,25 @@ values:
             service_name: storage.googleapis.com
           resources:
           - projects/123456789
+          roles: []
+        title: gcs-sa-foo
       ingress_policies:
+      - ingress_from:
+        - identities:
+          - serviceAccount:test-tf@myproject.iam.gserviceaccount.com
+          identity_type: null
+          sources:
+          - resource: null
+        ingress_to:
+        - operations:
+          - method_selectors: []
+            service_name: '*'
+          resources:
+          - projects/1234567890
+          - projects/321
+          - projects/654
+          roles: []
+        title: sa-tf-test-geo
       - ingress_from:
         - identities:
           - serviceAccount:test-tf-0@myproject.iam.gserviceaccount.com
@@ -92,21 +110,11 @@ values:
             service_name: compute.googleapis.com
           resources:
           - '*'
-      - ingress_from:
-        - identities:
-          - serviceAccount:test-tf@myproject.iam.gserviceaccount.com
-          identity_type: null
-          sources:
-          - resource: null
-        ingress_to:
-        - operations:
-          - method_selectors: []
-            service_name: '*'
-          resources:
-          - projects/1234567890
+          roles: []
+        title: sa-tf-test
       resources:
-      - projects/11111
-      - projects/111111
+      - projects/1111
+      - projects/2222
       restricted_services:
       - storage.googleapis.com
       vpc_accessible_services:
@@ -114,7 +122,7 @@ values:
         - storage.googleapis.com
         enable_restriction: true
     timeouts: null
-    title: r1
+    title: perimeter-north
     use_explicit_dry_run_spec: false
 
 counts:

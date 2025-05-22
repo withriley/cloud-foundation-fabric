@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,6 @@
 
 # tfdoc:file:description Automation project and resources.
 
-locals {
-  cicd_resman_sa    = try(module.automation-tf-cicd-sa["resman"].iam_email, "")
-  cicd_resman_r_sa  = try(module.automation-tf-cicd-r-sa["resman"].iam_email, "")
-  cicd_tenants_sa   = try(module.automation-tf-cicd-sa["tenants"].iam_email, "")
-  cicd_tenants_r_sa = try(module.automation-tf-cicd-r-sa["tenants"].iam_email, "")
-  cicd_vpcsc_sa     = try(module.automation-tf-cicd-sa["vpcsc"].iam_email, "")
-  cicd_vpcsc_r_sa   = try(module.automation-tf-cicd-r-sa["vpcsc"].iam_email, "")
-}
-
 module "automation-project" {
   source          = "../../../modules/project"
   billing_account = var.billing_account.id
@@ -32,7 +23,8 @@ module "automation-project" {
   parent = coalesce(
     var.project_parent_ids.automation, "organizations/${var.organization.id}"
   )
-  prefix = var.prefix
+  prefix   = var.prefix
+  universe = var.universe
   contacts = (
     var.bootstrap_user != null || var.essential_contacts == null
     ? {}
@@ -148,18 +140,20 @@ module "automation-project" {
       "cloudkms.googleapis.com",
       "cloudquotas.googleapis.com",
       "cloudresourcemanager.googleapis.com",
+      "datacatalog.googleapis.com",
       "essentialcontacts.googleapis.com",
       "iam.googleapis.com",
       "iamcredentials.googleapis.com",
+      "logging.googleapis.com",
+      "monitoring.googleapis.com",
       "networksecurity.googleapis.com",
       "orgpolicy.googleapis.com",
       "pubsub.googleapis.com",
       "servicenetworking.googleapis.com",
       "serviceusage.googleapis.com",
-      "stackdriver.googleapis.com",
       "storage-component.googleapis.com",
       "storage.googleapis.com",
-      "sts.googleapis.com"
+      "sts.googleapis.com",
     ],
     # enable specific service only after org policies have been applied
     var.bootstrap_user != null ? [] : [
@@ -178,11 +172,11 @@ module "automation-project" {
   logging_data_access = {
     "iam.googleapis.com" = {
       # ADMIN_READ captures impersonation and token generation/exchanges
-      ADMIN_READ = []
+      ADMIN_READ = {}
       # enable DATA_WRITE if you want to capture configuration changes
       # to IAM-related resources (roles, deny policies, service
       # accounts, identity pools, etc)
-      # DATA_WRITE = []
+      # DATA_WRITE = {}
     }
   }
 }
@@ -219,9 +213,10 @@ module "automation-tf-bootstrap-sa" {
   prefix       = var.prefix
   # allow SA used by CI/CD workflow to impersonate this SA
   iam = {
-    "roles/iam.serviceAccountTokenCreator" = compact([
-      try(module.automation-tf-cicd-sa["bootstrap"].iam_email, null)
-    ])
+    "roles/iam.serviceAccountTokenCreator" = [
+      for k, v in local.cicd_repositories :
+      module.automation-tf-cicd-sa[k].iam_email if v.stage == "bootstrap"
+    ]
   }
   iam_storage_roles = {
     (module.automation-tf-output-gcs.name) = ["roles/storage.admin"]
@@ -236,9 +231,10 @@ module "automation-tf-bootstrap-r-sa" {
   prefix       = var.prefix
   # allow SA used by CI/CD workflow to impersonate this SA
   iam = {
-    "roles/iam.serviceAccountTokenCreator" = compact([
-      try(module.automation-tf-cicd-r-sa["bootstrap"].iam_email, null)
-    ])
+    "roles/iam.serviceAccountTokenCreator" = [
+      for k, v in local.cicd_repositories :
+      module.automation-tf-cicd-r-sa[k].iam_email if v.stage == "bootstrap"
+    ]
   }
   # we grant organization roles here as IAM bindings have precedence over
   # custom roles in the organization module, so these need to depend on it
@@ -276,21 +272,12 @@ module "automation-tf-resman-sa" {
   display_name = "Terraform stage 1 resman service account."
   prefix       = var.prefix
   # allow SA used by CI/CD workflow to impersonate this SA
-  # we use additive IAM to allow tenant CI/CD SAs to impersonate it
-  iam_bindings_additive = merge(
-    local.cicd_resman_sa == "" ? {} : {
-      cicd_token_creator_resman = {
-        member = local.cicd_resman_sa
-        role   = "roles/iam.serviceAccountTokenCreator"
-      }
-    },
-    local.cicd_tenants_sa == "" ? {} : {
-      cicd_token_creator_tenants = {
-        member = local.cicd_tenants_sa
-        role   = "roles/iam.serviceAccountTokenCreator"
-      }
-    }
-  )
+  iam = {
+    "roles/iam.serviceAccountTokenCreator" = [
+      for k, v in local.cicd_repositories :
+      module.automation-tf-cicd-sa[k].iam_email if v.stage == "resman"
+    ]
+  }
   iam_storage_roles = {
     (module.automation-tf-output-gcs.name) = ["roles/storage.admin"]
   }
@@ -303,21 +290,12 @@ module "automation-tf-resman-r-sa" {
   display_name = "Terraform stage 1 resman service account (read-only)."
   prefix       = var.prefix
   # allow SA used by CI/CD workflow to impersonate this SA
-  # we use additive IAM to allow tenant CI/CD SAs to impersonate it
-  iam_bindings_additive = merge(
-    local.cicd_resman_r_sa == "" ? {} : {
-      cicd_token_creator_resman = {
-        member = local.cicd_resman_r_sa
-        role   = "roles/iam.serviceAccountTokenCreator"
-      }
-    },
-    local.cicd_tenants_r_sa == "" ? {} : {
-      cicd_token_creator_tenants = {
-        member = local.cicd_tenants_r_sa
-        role   = "roles/iam.serviceAccountTokenCreator"
-      }
-    }
-  )
+  iam = {
+    "roles/iam.serviceAccountTokenCreator" = [
+      for k, v in local.cicd_repositories :
+      module.automation-tf-cicd-r-sa[k].iam_email if v.stage == "resman"
+    ]
+  }
   # we grant organization roles here as IAM bindings have precedence over
   # custom roles in the organization module, so these need to depend on it
   iam_organization_roles = {
@@ -353,22 +331,16 @@ module "automation-tf-vpcsc-sa" {
   name         = var.resource_names["sa-vpcsc"]
   display_name = "Terraform stage 1 vpcsc service account."
   prefix       = var.prefix
-  # allow SA used by CI/CD workflow to impersonate this SA
-  # we use additive IAM to allow tenant CI/CD SAs to impersonate it
-  iam_bindings_additive = merge(
-    {
-      security_admins = {
-        member = local.principals["gcp-security-admins"]
-        role   = "roles/iam.serviceAccountTokenCreator"
-      }
-    },
-    local.cicd_vpcsc_sa == "" ? {} : {
-      cicd_token_creator_vpcsc = {
-        member = local.cicd_vpcsc_sa
-        role   = "roles/iam.serviceAccountTokenCreator"
-      }
-    }
-  )
+  # allow security group and SA used by CI/CD workflow to impersonate this SA
+  iam = {
+    "roles/iam.serviceAccountTokenCreator" = concat(
+      [local.principals["gcp-security-admins"]],
+      [
+        for k, v in local.cicd_repositories :
+        module.automation-tf-cicd-sa[k].iam_email if v.stage == "vpcsc"
+      ]
+    )
+  }
   iam_storage_roles = {
     (module.automation-tf-output-gcs.name) = ["roles/storage.admin"]
   }
@@ -381,12 +353,11 @@ module "automation-tf-vpcsc-r-sa" {
   display_name = "Terraform stage 1 vpcsc service account (read-only)."
   prefix       = var.prefix
   # allow SA used by CI/CD workflow to impersonate this SA
-  # we use additive IAM to allow tenant CI/CD SAs to impersonate it
-  iam_bindings_additive = local.cicd_vpcsc_r_sa == "" ? {} : {
-    cicd_token_creator_vpcsc = {
-      member = local.cicd_vpcsc_r_sa
-      role   = "roles/iam.serviceAccountTokenCreator"
-    }
+  iam = {
+    "roles/iam.serviceAccountTokenCreator" = [
+      for k, v in local.cicd_repositories :
+      module.automation-tf-cicd-r-sa[k].iam_email if v.stage == "vpcsc"
+    ]
   }
   iam_storage_roles = {
     (module.automation-tf-output-gcs.name) = [module.organization.custom_role_id["storage_viewer"]]

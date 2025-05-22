@@ -55,16 +55,16 @@ module "project" {
   name            = var.project_id
   parent          = try(var.project_create.parent, null)
   prefix          = var.project_create == null ? null : var.prefix
-  project_create  = var.project_create != null
+  project_reuse   = var.project_create != null ? null : {}
   services = [
     "iap.googleapis.com",
     "logging.googleapis.com",
     "monitoring.googleapis.com",
     "run.googleapis.com",
     "servicenetworking.googleapis.com",
-    "sqladmin.googleapis.com",
     "sql-component.googleapis.com",
-    "vpcaccess.googleapis.com"
+    "sqladmin.googleapis.com",
+    "vpcaccess.googleapis.com",
   ]
 }
 

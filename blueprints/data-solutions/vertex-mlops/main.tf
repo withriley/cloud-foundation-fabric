@@ -193,7 +193,7 @@ module "project" {
   name              = var.project_config.project_id
   parent            = var.project_config.parent
   billing_account   = var.project_config.billing_account_id
-  project_create    = var.project_config.billing_account_id != null
+  project_reuse     = var.project_config.billing_account_id != null ? null : {}
   prefix            = var.prefix
   iam_by_principals = local.iam_principals
   iam_bindings_additive = {
@@ -271,20 +271,20 @@ module "project" {
     "bigquery.googleapis.com",
     "bigquerystorage.googleapis.com",
     "cloudbuild.googleapis.com",
-    "containerfilesystem.googleapis.com",
     "compute.googleapis.com",
+    "containerfilesystem.googleapis.com",
     "datacatalog.googleapis.com",
     "dataflow.googleapis.com",
     "iam.googleapis.com",
+    "logging.googleapis.com",
     "ml.googleapis.com",
     "monitoring.googleapis.com",
     "notebooks.googleapis.com",
     "secretmanager.googleapis.com",
     "servicenetworking.googleapis.com",
     "serviceusage.googleapis.com",
-    "stackdriver.googleapis.com",
+    "storage-component.googleapis.com",
     "storage.googleapis.com",
-    "storage-component.googleapis.com"
   ]
   shared_vpc_service_config = local.shared_vpc_project == null ? null : {
     attach       = true

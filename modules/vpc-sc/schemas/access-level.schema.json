@@ -74,8 +74,7 @@
           "members": {
             "type": "array",
             "items": {
-              "type": "string",
-              "pattern": "^(?:serviceAccount:|user:)"
+              "type": "string"
             }
           },
           "negate": {
@@ -91,6 +90,18 @@
             "type": "array",
             "items": {
               "type": "string"
+            }
+          },
+          "vpc_subnets": {
+            "type": "object",
+            "additionalProperties": false,
+            "patternProperties": {
+              "^//compute.googleapis.com/projects/[^/]+/global/networks/[^/]+$": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
             }
           }
         }

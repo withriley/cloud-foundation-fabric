@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,21 @@
  * limitations under the License.
  */
 
+output "alert_ids" {
+  description = "Monitoring alert IDs."
+  value = {
+    for k, v in google_monitoring_alert_policy.alerts :
+    k => v.id
+  }
+}
+
 output "custom_role_id" {
   description = "Map of custom role IDs created in the project."
   value = {
     for k, v in google_project_iam_custom_role.roles :
     # build the string manually so that role IDs can be used as map
     # keys (useful for folder/organization/project-level iam bindings)
-    (k) => "projects/${local.prefix}${var.name}/roles/${local.custom_roles[k].name}"
+    (k) => "projects/${local.project_id}/roles/${local.custom_roles[k].name}"
   }
 }
 
@@ -28,7 +36,6 @@ output "custom_roles" {
   description = "Map of custom roles resources created in the project."
   value       = google_project_iam_custom_role.roles
 }
-
 
 output "default_service_accounts" {
   description = "Emails of the default service accounts for this project."
@@ -40,7 +47,7 @@ output "default_service_accounts" {
 
 output "id" {
   description = "Project id."
-  value       = "${local.prefix}${var.name}"
+  value       = local.project_id
   depends_on = [
     google_project.project,
     data.google_project.project,
@@ -85,6 +92,19 @@ output "network_tag_values" {
   }
 }
 
+output "notification_channel_names" {
+  description = "Notification channel names."
+  value = {
+    for k, v in google_monitoring_notification_channel.channels :
+    k => v.name
+  }
+}
+
+output "notification_channels" {
+  description = "Full notification channel objects."
+  value       = google_monitoring_notification_channel.channels
+}
+
 output "number" {
   description = "Project number."
   value       = local.project.number
@@ -105,7 +125,7 @@ output "number" {
 
 output "project_id" {
   description = "Project id."
-  value       = "${local.prefix}${var.name}"
+  value       = local.project_id
   depends_on = [
     google_project.project,
     data.google_project.project,
@@ -147,8 +167,8 @@ output "service_agents" {
 }
 
 output "services" {
-  description = "Service APIs to enabled in the project."
-  value       = var.services
+  description = "Service APIs to enable in the project."
+  value       = local.available_services
   depends_on = [
     google_project_service.project_services,
     google_project_service_identity.default,
