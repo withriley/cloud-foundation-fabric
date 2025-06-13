@@ -156,6 +156,11 @@ variable "description" {
   description = "Optional description."
   type        = string
   default     = "Terraform managed."
+  ## ADDED ##
+  validation {
+    condition     = length(var.description) <= 255
+    error_message = "Description cannot be longer than 255 characters."
+  }
 }
 
 variable "iam" {
@@ -168,11 +173,25 @@ variable "labels" {
   description = "Resource labels."
   type        = map(string)
   default     = {}
+  ## ADDED ##
+  validation {
+    condition = alltrue([
+      for k, v in var.labels :
+      can(regex("^[a-z]([a-z0-9_-]{0,62}[a-z0-9])?$", k)) &&
+      can(regex("^[a-z0-9]([a-z0-9_-]{0,62}[a-z0-9])?$", v))
+    ])
+    error_message = "Labels must start with a lowercase letter, and can only contain lowercase letters, numeric characters, underscores, and dashes."
+  }
 }
 
 variable "name" {
   description = "Name used for Cloud Deploy Pipeline."
   type        = string
+  ## ADDED ##
+  validation {
+    condition     = can(regex("^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$", var.name))
+    error_message = "Invalid delivery pipeline name. Must be between 1 and 63 characters, and match the regular expression [a-z]([a-z0-9-]{0,61}[a-z0-9])?."
+  }
 }
 
 variable "prefix" {
@@ -239,8 +258,25 @@ variable "targets" {
       stable_revision_tags      = optional(list(string), null)
     }))
     iam = optional(map(list(string)), {})
-
   }))
   default  = []
   nullable = false
+  ## ADDED ##
+  validation {
+    condition = alltrue([
+      for target in var.targets :
+      contains(["STANDARD", "CANARY"], target.strategy)
+    ])
+    error_message = "The strategy for a target must be either 'STANDARD' or 'CANARY'."
+  }
+  validation {
+    condition = alltrue([
+      for target in var.targets :
+      target.strategy != "CANARY" || alltrue([
+        for i, p in target.deployment_percentages :
+        p >= 0 && p < 100 && (i == 0 || p > target.deployment_percentages[i - 1])
+      ])
+    ])
+    error_message = "For canary strategy, deployment percentages must be in ascending order and each percentage must be between 0 and 99."
+  }
 }
