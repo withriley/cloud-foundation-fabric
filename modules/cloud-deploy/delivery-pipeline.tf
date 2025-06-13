@@ -17,7 +17,7 @@
 
 resource "google_clouddeploy_delivery_pipeline" "pipeline" {
   location    = var.region
-  name        = "${local.prefix}${var.name}"
+  name        = var.name
   description = var.description
   project     = var.project_id
 

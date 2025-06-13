@@ -18,7 +18,7 @@ resource "google_clouddeploy_delivery_pipeline_iam_binding" "default" {
   project    = var.project_id
   location   = var.region
   for_each   = var.iam
-  name       = "${local.prefix}${var.name}"
+  name       = var.name
   role       = each.key
   members    = each.value
   depends_on = [google_clouddeploy_delivery_pipeline.pipeline]

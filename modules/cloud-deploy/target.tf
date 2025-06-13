@@ -50,7 +50,7 @@ resource "google_clouddeploy_target" "target" {
     for_each = each.value.cloud_run_configs == null ? [] : [""]
 
     content {
-      location = "projects/${coalesce(each.value.project_id, var.project_id)}/locations/${coalesce(each.value.region, var.region)}"
+      location = "projects/${coalesce(each.value.cloud_run_configs.project_id, each.value.project_id, var.project_id)}/locations/${coalesce(each.value.cloud_run_configs.region, each.value.region, var.region)}"
     }
   }
 

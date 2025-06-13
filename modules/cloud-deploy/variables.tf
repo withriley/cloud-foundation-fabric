@@ -156,7 +156,6 @@ variable "description" {
   description = "Optional description."
   type        = string
   default     = "Terraform managed."
-  ## ADDED ##
   validation {
     condition     = length(var.description) <= 255
     error_message = "Description cannot be longer than 255 characters."
@@ -173,34 +172,22 @@ variable "labels" {
   description = "Resource labels."
   type        = map(string)
   default     = {}
-  ## ADDED ##
   validation {
     condition = alltrue([
       for k, v in var.labels :
-      can(regex("^[a-z]([a-z0-9_-]{0,62}[a-z0-9])?$", k)) &&
-      can(regex("^[a-z0-9]([a-z0-9_-]{0,62}[a-z0-9])?$", v))
+      can(regex("^[a-z]([a-z0-9_.-]{0,62}[a-z0-9.])?$", k)) &&
+      can(regex("^[a-z0-9]([a-z0-9_.-]{0,62}[a-z0-9.])?$", v))
     ])
-    error_message = "Labels must start with a lowercase letter, and can only contain lowercase letters, numeric characters, underscores, and dashes."
+    error_message = "Labels must start with a lowercase letter and can only contain lowercase letters, numeric characters, underscores and dashes."
   }
 }
 
 variable "name" {
   description = "Name used for Cloud Deploy Pipeline."
   type        = string
-  ## ADDED ##
   validation {
     condition     = can(regex("^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$", var.name))
-    error_message = "Invalid delivery pipeline name. Must be between 1 and 63 characters, and match the regular expression [a-z]([a-z0-9-]{0,61}[a-z0-9])?."
-  }
-}
-
-variable "prefix" {
-  description = "Optional prefix used for resource names."
-  type        = string
-  default     = null
-  validation {
-    condition     = var.prefix != ""
-    error_message = "Prefix cannot be empty, please use null instead."
+    error_message = "Delivery pipeline name must be between 1 and 63 characters and match the regular expression [a-z]([a-z0-9-]{0,61}[a-z0-9])?."
   }
 }
 
@@ -252,6 +239,8 @@ variable "targets" {
       postdeploy_actions    = optional(list(string))
     })), {})
     cloud_run_configs = optional(object({
+      project_id                = optional(string, null)
+      region                    = optional(string, null)
       automatic_traffic_control = optional(bool, true)
       canary_revision_tags      = optional(list(string), null)
       prior_revision_tags       = optional(list(string), null)
@@ -261,7 +250,6 @@ variable "targets" {
   }))
   default  = []
   nullable = false
-  ## ADDED ##
   validation {
     condition = alltrue([
       for target in var.targets :

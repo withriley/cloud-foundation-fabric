@@ -15,7 +15,6 @@
  */
 
 locals {
-  prefix        = var.prefix == null ? "" : "${var.prefix}-"
   pipeline_type = "serial"
   target_iam_attributes = { for i, v in flatten([
     for target_key, target in var.targets : [
