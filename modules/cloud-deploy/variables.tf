@@ -81,7 +81,7 @@ variable "automations" {
 }
 
 variable "deploy_policies" {
-  description = "Create Deployment Policies in a name => attributes format"
+  description = "Configurations for Deployment Policies in a name => attributes format"
   type = map(object({
     project_id  = optional(string, null)
     region      = optional(string, null)
@@ -153,7 +153,7 @@ variable "deploy_policies" {
 }
 
 variable "description" {
-  description = "Optional description."
+  description = "Cloud Deploy Delivery Pipeline description."
   type        = string
   default     = "Terraform managed."
   validation {
@@ -163,13 +163,13 @@ variable "description" {
 }
 
 variable "iam" {
-  description = "IAM bindings for Cloud Run service in {ROLE => [MEMBERS]} format."
+  description = "IAM bindings for Cloud Deploy Delivery Pipeline resource in {ROLE => [MEMBERS]} format."
   type        = map(list(string))
   default     = {}
 }
 
 variable "labels" {
-  description = "Resource labels."
+  description = "Cloud Deploy Delivery Pipeline resource labels."
   type        = map(string)
   default     = {}
   validation {
@@ -183,7 +183,7 @@ variable "labels" {
 }
 
 variable "name" {
-  description = "Name used for Cloud Deploy Pipeline."
+  description = "Cloud Deploy Delivery Pipeline name."
   type        = string
   validation {
     condition     = can(regex("^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$", var.name))
@@ -192,23 +192,23 @@ variable "name" {
 }
 
 variable "project_id" {
-  description = "Project id used for all resources."
+  description = "Project id used for resources, if not explicitly specified."
   type        = string
 }
 
 variable "region" {
-  description = "Region used for all resources."
+  description = "Region used for resources, if not explicitly specified."
   type        = string
 }
 
 variable "suspended" {
-  description = "Suspend delivery pipeline."
+  description = "Configuration to suspend a delivery pipeline."
   type        = bool
   default     = false
 }
 
 variable "targets" {
-  description = "Configuration for new targets associated with the deployment pipeline in a name => attributes format"
+  description = "Configuration for new targets associated with the delivery pipeline in a list format. Order of the targets are defined by the order within the list"
   type = list(object({
     name                  = string
     create_target         = optional(bool, true)
