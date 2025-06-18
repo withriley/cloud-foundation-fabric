@@ -80,11 +80,11 @@ resource "google_secret_manager_secret" "default" {
 }
 
 resource "google_secret_manager_secret_version" "default" {
-  provider    = google-beta
-  for_each    = local.version_keypairs
-  secret      = google_secret_manager_secret.default[each.value.secret].id
-  enabled     = each.value.enabled
-  secret_data = each.value.data
+  provider       = google-beta
+  for_each       = local.version_keypairs
+  secret         = google_secret_manager_secret.default[each.value.secret].id
+  enabled        = each.value.enabled
+  secret_data_wo = each.value.data
 }
 
 resource "google_secret_manager_secret_iam_binding" "default" {

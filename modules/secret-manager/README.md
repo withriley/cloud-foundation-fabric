@@ -4,8 +4,6 @@ Simple Secret Manager module that allows managing one or more secrets, their ver
 
 Secret Manager locations are available via the `gcloud secrets locations list` command.
 
-**Warning:** managing versions will persist their data (the actual secret you want to protect) in the Terraform state in unencrypted form, accessible to any identity able to read or pull the state file.
-
 <!-- BEGIN TOC -->
 - [Secrets](#secrets)
 - [Secret IAM bindings](#secret-iam-bindings)
@@ -65,7 +63,8 @@ module "secret-manager" {
 
 ## Secret versions
 
-As mentioned above, please be aware that **version data will be stored in state in unencrypted form**.
+Please be aware that **version data will be stored unless it is provided as a environment variable**.
+
 
 ```hcl
 module "secret-manager" {
@@ -88,6 +87,34 @@ module "secret-manager" {
   }
 }
 # tftest modules=1 resources=5 inventory=versions.yaml e2e
+```
+An example of how to set the data without hardcoding it in the module is to use environment variables. If the module is used as shown below:
+```hcl
+module "secret-manager" {
+  source     = "./fabric/modules/secret-manager"
+  project_id = var.project_id
+  secrets = {
+    test-auto = {}
+    test-manual = {
+      locations = [var.regions.primary, var.regions.secondary]
+    }
+  }
+  versions = {
+    test-auto = {
+      v1 = { enabled = true, data = var.test_auto_v1_data }
+    },
+    test-manual = {
+      v1 = { enabled = true, data = var.test_manual_v1_data }
+    }
+  }
+}
+```
+then the `test_auto_v1_data` and `test_manual_v1_data` variables must be set in the environment using the module, for example:
+
+```bash
+
+export TF_VAR_test_auto_v1_data="auto foo bar baz"
+export TF_VAR_test_manual_v1_data="manual foo bar spam"
 ```
 
 ## Secret with customer managed encryption key
