@@ -34,7 +34,7 @@ This deploys a Cloud Deploy Delivery Pipeline with a single target using the Can
 module "cloud_deploy" {
   source     = "./fabric/modules/cloud-deploy"
   project_id = var.project_id
-  name       = "dev-pipeline"
+  name       = "deployment-pipeline"
   region     = var.region
 
   targets = [
@@ -61,7 +61,7 @@ This deploys a Cloud Deploy Delivery Pipeline with a single target with the Cana
 module "cloud_deploy" {
   source     = "./fabric/modules/cloud-deploy"
   project_id = var.project_id
-  name       = "dev-pipeline"
+  name       = "deployment-pipeline"
   region     = var.region
 
 
@@ -89,7 +89,7 @@ This deployments enables the rollout to have a verification step by setting `ver
 module "cloud_deploy" {
   source     = "./fabric/modules/cloud-deploy"
   project_id = var.project_id
-  name       = "dev-pipeline"
+  name       = "deployment-pipeline"
   region     = var.region
 
 
@@ -117,7 +117,7 @@ This deployment demonstrates the ability to create a delivery pipeline by reusin
 module "cloud_deploy" {
   source     = "./fabric/modules/cloud-deploy"
   project_id = var.project_id
-  name       = "dev-pipeline"
+  name       = "deployment-pipeline"
   region     = var.region
 
 
@@ -147,7 +147,7 @@ The sequence of deployment is defined by the sequence of the target configuratio
 module "cloud_deploy" {
   source     = "./fabric/modules/cloud-deploy"
   project_id = var.project_id
-  name       = "dev-pipeline"
+  name       = "deployment-pipeline"
   region     = var.region
 
 
@@ -195,7 +195,7 @@ Targets in this deployment can deploy to different projects. For instance, `qa-t
 module "cloud_deploy" {
   source     = "./fabric/modules/cloud-deploy"
   project_id = var.project_id
-  name       = "dev-pipeline"
+  name       = "deployment-pipeline"
   region     = var.region
 
 
@@ -243,7 +243,7 @@ Cloud Deploy allows deploying to targets in a serial and parallel order. By defi
 module "cloud_deploy" {
   source     = "./fabric/modules/cloud-deploy"
   project_id = var.project_id
-  name       = "dev-pipeline"
+  name       = "deployment-pipeline"
   region     = var.region
 
 
@@ -297,7 +297,7 @@ This deployment incorporates automations that are supported within a delivery pi
 module "cloud_deploy" {
   source     = "./fabric/modules/cloud-deploy"
   project_id = var.project_id
-  name       = "dev-pipeline"
+  name       = "deployment-pipeline"
   region     = var.region
 
   automations = {
@@ -346,7 +346,7 @@ By default, the deployment policy defined below applies to all delivery pipeline
 module "cloud_deploy" {
   source     = "./fabric/modules/cloud-deploy"
   project_id = var.project_id
-  name       = "dev-pipeline"
+  name       = "deployment-pipeline"
   region     = var.region
 
   targets = [
@@ -401,7 +401,7 @@ This example specifies the option to set IAM roles at the Delivery Pipeline and 
 module "cloud_run" {
   source     = "./fabric/modules/cloud-deploy"
   project_id = var.project_id
-  name       = "dev-pipeline"
+  name       = "deployment-pipeline"
   region     = var.region
 
   iam = { "roles/clouddeploy.releaser" = ["user:allUsers"] }
